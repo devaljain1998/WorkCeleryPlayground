@@ -20,9 +20,9 @@ celery_worker = make_celery(app)
 def hello_world():
     return 'Hello, World!'
 
-@app.route('/add/<a>/<b>', methods=['GET'])
-def add_digits_route(a, b):
-    delay_task.delay()
+@app.route('/add/<int:a>/<int:b>', methods=['GET'])
+def add_digits_route(a: int, b: int):
+    task_handler_task.delay()
     print(f'got: a={a}, b={b}')
     get_sum_of_digits = lambda a, b: int(a) + int(b)
     sum_of_digits = get_sum_of_digits(a, b)
@@ -46,9 +46,18 @@ def simple_periodic_task(name: str = 'Deval'):
     print(f'Hey {name}, How you doin?')
     current_time = datetime.now()
     print(f'Task completed at time: {current_time}')
+
     
 @celery_worker.task(name='app.every_2_min_repeating_task')
 def every_2_min_repeating_task(name: str = 'Deval'):
     print(f'Hey {name}, How you doin?', "let's meet after 2 min :)")
     current_time = datetime.now()
-    print(f'Task completed at time: {current_time}')    
+    print(f'Task completed at time: {current_time}')
+
+    
+# Task3: Calling Task with Task
+@celery_worker.task(name='app.task_handler')
+def task_handler_task():
+    print("Inside task_handler -> calling: delay_task")
+    delay_task.s().delay(duration=4)
+    print("Completed delay_task, now back to task_handler")

@@ -46,3 +46,9 @@ def simple_periodic_task(name: str = 'Deval'):
     print(f'Hey {name}, How you doin?')
     current_time = datetime.now()
     print(f'Task completed at time: {current_time}')
+    
+@celery_worker.task(name='app.every_2_min_repeating_task')
+def every_2_min_repeating_task(name: str = 'Deval'):
+    print(f'Hey {name}, How you doin?', "let's meet after 2 min :)")
+    current_time = datetime.now()
+    print(f'Task completed at time: {current_time}')    

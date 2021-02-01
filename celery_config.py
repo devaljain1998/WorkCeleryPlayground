@@ -14,5 +14,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'app.simple_periodic_task',
         # Every minute
         'schedule': crontab(minute="*"),
-    }
+    },
+    'every-five-minutes': {
+        'task': 'app.every_2_min_repeating_task',
+        # Every minute
+        'schedule': crontab(minute="*/2"),
+    },
 }

@@ -1,4 +1,5 @@
 from celery import Celery
+import celery_config
 
 def make_celery(app):
     celery = Celery(
@@ -7,6 +8,7 @@ def make_celery(app):
         broker=app.config['CELERY_BROKER_URL']
     )
     celery.conf.update(app.config)
+    celery.config_from_object(celery_config)
 
     class ContextTask(celery.Task):
         def __call__(self, *args, **kwargs):

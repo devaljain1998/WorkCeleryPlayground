@@ -29,6 +29,12 @@ def add_digits_route(a: int, b: int):
     sum_of_digits = get_sum_of_digits(a, b)
     return f"sum of {a} + {b} : {sum_of_digits}"
 
+@app.route('/div/<int:a>/<int:b>', methods=['GET'])
+def div_digits_route(a: int, b: int):
+    print(f'got: a={a}, b={b}')
+    divison_task.delay(a, b)
+    return "Called divison task!"
+
 
 # CELERY TASKS: #
 # Task1: A normal celery task:
@@ -83,3 +89,20 @@ def greetings_route_with_different_methods(name, delay: int = 0):
 @celery_worker.task(name='app.hello_world_on_a_different_queue_task')
 def hello_world_on_a_different_queue_task(name: str):
     print(f'Hello', name)
+    
+# Task7: Retry task:
+@celery_worker.task(bind=True, name='app.divison_task')
+def divison_task(self, a: int, b: int):
+    print('Inside', divison_task.__name__)
+    print('for', dict(a=a, b=b))
+    try:
+        quotient = a / b
+        return quotient
+    except ZeroDivisionError as exc:
+        print('ZeroDivisonError occured for: ', dict(a=a, b=b))
+        print('Now incrementing b')
+        b += 1
+        raise self.retry(exc = exc, countdown=3, max_retries=5)
+    except Exception as e:
+        print('Got another excpetion', 'now incrementing b', dict(a=a, b=b))
+        divison_task.s().delay(a, b + 1)

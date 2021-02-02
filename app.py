@@ -33,11 +33,12 @@ def add_digits_route(a: int, b: int):
 # Task1: A normal celery task:
 @celery_worker.task(name="app.simple_delay_task")
 def delay_task(duration=10):
+    print(f'Inside delay_task', f'time= {datetime.now()}')
     print(f"Delaying task for {duration} duration.")
     for i in range(duration):
         print(i + 1, "seconds")
         sleep(1)
-    print('Delay completed!')
+    print('Delay completed!', datetime.now())
     return
 
 # Task2: A Periodic Celery Task
@@ -61,3 +62,17 @@ def task_handler_task():
     print("Inside task_handler -> calling: delay_task")
     delay_task.s().delay(duration=4)
     print("Completed delay_task, now back to task_handler")
+
+# Task4: Different ways of executing a task in celery:
+@app.route('/greet/<name>/<int:delay>', methods=['GET'])
+@app.route('/greet/<name>/', methods=['GET'])
+def greetings_route_with_different_methods(name, delay: int = 0):
+    print(f'Inside', greetings_route_with_different_methods.__name__)
+    print(f'Current time: ', datetime.now())
+    if delay == 0:
+        delay_task.delay()
+    else:
+        print(f'Now applying apply_async and it will be starting after countdown of {delay} seconds.')
+        delay_task.apply_async((delay,), countdown=delay)
+        
+    return f'Hey {name}, How you doing?'

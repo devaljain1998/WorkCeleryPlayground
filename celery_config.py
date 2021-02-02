@@ -21,3 +21,7 @@ CELERYBEAT_SCHEDULE = {
         'schedule': crontab(minute="*/2"),
     },
 }
+
+CELERY_ROUTES = {
+    'app.hello_world_on_a_different_queue_task': {'queue': 'queue2'}
+}

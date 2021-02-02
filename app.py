@@ -18,6 +18,7 @@ celery_worker = make_celery(app)
 
 @app.route('/')
 def hello_world():
+    hello_world_on_a_different_queue_task.delay('Deval for a different Queue!')
     return 'Hello, World!'
 
 @app.route('/add/<int:a>/<int:b>', methods=['GET'])
@@ -76,3 +77,9 @@ def greetings_route_with_different_methods(name, delay: int = 0):
         delay_task.apply_async((delay,), countdown=delay)
         
     return f'Hey {name}, How you doing?'
+
+# Task5: Adding task on a different queue:
+# cmd: celery -A app.celery_worker -l INFO -Q celery,queue2
+@celery_worker.task(name='app.hello_world_on_a_different_queue_task')
+def hello_world_on_a_different_queue_task(name: str):
+    print(f'Hello', name)

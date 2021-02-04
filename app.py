@@ -2,6 +2,8 @@ from flask import Flask
 from celery_importer import make_celery
 from time import sleep
 from datetime import datetime
+import celery
+from celery import chain, group
 
 app = Flask(__name__)
 backend='rpc://'
@@ -23,7 +25,8 @@ def hello_world():
 
 @app.route('/add/<int:a>/<int:b>', methods=['GET'])
 def add_digits_route(a: int, b: int):
-    task_handler_task.delay()
+    # task_handler_task.delay()
+    delay_task.delay()
     print(f'got: a={a}, b={b}')
     get_sum_of_digits = lambda a, b: int(a) + int(b)
     sum_of_digits = get_sum_of_digits(a, b)
@@ -40,13 +43,16 @@ def div_digits_route(a: int, b: int):
 # Task1: A normal celery task:
 @celery_worker.task(name="app.simple_delay_task")
 def delay_task(duration=10):
-    print(f'Inside delay_task', f'time= {datetime.now()}')
-    print(f"Delaying task for {duration} duration.")
-    for i in range(duration):
-        print(i + 1, "seconds")
-        sleep(1)
-    print('Delay completed!', datetime.now())
-    return
+    try:
+        print(f'Inside delay_task', f'time= {datetime.now()}')
+        print(f"Delaying task for {duration} duration.")
+        for i in range(duration):
+            print(i + 1, "seconds")
+            sleep(1)
+        print('Delay completed!', datetime.now())
+        return
+    except celery.exceptions.SoftTimeLimitExceeded as e:
+        print('Soft time limit exceed. Terminating!')
 
 # Task2: A Periodic Celery Task
 @celery_worker.task(name='app.simple_periodic_task')
@@ -106,3 +112,23 @@ def divison_task(self, a: int, b: int):
     except Exception as e:
         print('Got another excpetion', 'now incrementing b', dict(a=a, b=b))
         divison_task.s().delay(a, b + 1)
+        
+# POC: chain
+@celery_worker.task(name='app.string_printer')
+def string_printer(string: str, other_string: str = None) -> str:
+    current_string = string if not other_string else string+other_string
+    print('Inside', string_printer.__name__)
+    print(current_string)
+    return current_string
+
+@app.route('/chain/addition/<initial_string>', methods=['GET'])
+def chain_route(initial_string: str):
+    print('Inside: ', chain_route.__name__)
+    result = chain(
+        string_printer.s(initial_string), string_printer.s(initial_string), string_printer.s(initial_string))
+    result.delay()
+    print('Called chain')
+    # final_result = result.get()
+    # print(final_result)
+    # return final_result
+    return 'TEST'

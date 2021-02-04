@@ -9,6 +9,9 @@ CELERY_ACCEPT_CONTENT = ['json', 'msgpack', 'yaml']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
+# TIME LIMITS:
+CELERYD_TASK_SOFT_TIME_LIMIT = 5
+
 CELERYBEAT_SCHEDULE = {
     'test-celery': {
         'task': 'app.simple_periodic_task',
